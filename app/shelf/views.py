@@ -55,7 +55,7 @@ class ShelfManipulation(MethodView):
         if not book:
             return jsonify({"message": f'The book with id {shelf_id} is not available'}), 400
         
-        if book.id != current_user:
+        if book.user_id != current_user:
             return jsonify({"message": 'You are forbidden from editing this entry'}), 403
         
         try:
