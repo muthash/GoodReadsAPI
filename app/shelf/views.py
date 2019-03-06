@@ -39,8 +39,27 @@ class ShelfManipulation(MethodView):
         response = {'book details': books}
         return jsonify(response), 200
 
+    @jwt_required
+    def patch(self, shelf_id):
+        if not request.is_json:
+            return jsonify({"msg": "Missing JSON in request"}), 400
+        
+        status = request.json.get('status', None)
+        current_user = get_jwt_identity()
+
+        book = [book for book in store
+                     if shelf_id == book.id and current_user==book.email]
+        if not book:
+            return jsonify({"message": "The action is Forbidden"}), 403
+        
+        index = store.index(book[0])
+        store[index].status = status
+
+        response = {'message': 'Book status updated successfully', 'book details': store[index].serialize()}
+        return jsonify(response), 200
+        
 
 shelf_view = ShelfManipulation.as_view('books')
 shelf.add_url_rule('', view_func=shelf_view, methods=['POST', ])
 shelf.add_url_rule('', defaults={'shelf_id': None}, view_func=shelf_view, methods=['GET', ])
-shelf.add_url_rule('/<int:shelf_id>', view_func=shelf_view , methods=['GET', 'PUT', 'DELETE'])
+shelf.add_url_rule('/<int:shelf_id>', view_func=shelf_view , methods=['GET', 'PATCH'])
