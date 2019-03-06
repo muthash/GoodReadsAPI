@@ -18,6 +18,7 @@ def create_app(config_name):
     jwt.init_app(app)
 
     from app.auth.views import auth
+    from app.shelf.views import shelf
 
     @app.errorhandler(422)
     @app.errorhandler(400)
@@ -38,5 +39,6 @@ def create_app(config_name):
         return user.email
 
     app.register_blueprint(auth)
+    app.register_blueprint(shelf)
 
     return app
