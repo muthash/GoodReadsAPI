@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, jwt_optional
 from flask.views import MethodView
 
-from app.shelf.model import BookShelf, store
+from app.models import Shelf
 
 shelf = Blueprint('shelf', __name__, url_prefix='/books')
 
@@ -17,26 +17,30 @@ class ShelfManipulation(MethodView):
         status = request.json.get('status', None) 
         current_user = get_jwt_identity()
 
-        book = BookShelf(title, genre, status, current_user)
-        store.append(book)
-        return jsonify({'message': 'Book entry created successfully'}), 201
+        try:
+            book = Shelf(title, genre, status, current_user)
+            book.save()
+            return jsonify({'message': 'Book entry created successfully'}), 201
+        except Exception as e:
+            return jsonify({'message': str(e)}), 401
 
     @jwt_optional
     def get(self, shelf_id):
         if shelf_id is None:
-            books = [book.serialize() for book in store]
+            books = Shelf.get_all()
             if books:
-                response = {'Available books': books}
+                res = [book.serialize() for book in books]
+                response = {'Available books': res}
                 return jsonify(response), 200
             else:
                 response = {'message': 'There are no book entries currently'}
             return jsonify(response), 202
         
-        books = [book.serialize() for book in store if shelf_id == book.id]
-        if not books:
+        book = Shelf.query.filter_by(id=shelf_id).first()
+        if not book:
             response = {'message': f'The book with id {shelf_id} is not available'}
             return jsonify(response), 404
-        response = {'book details': books}
+        response = {'book details': book.serialize()}
         return jsonify(response), 200
 
     @jwt_required
@@ -47,16 +51,20 @@ class ShelfManipulation(MethodView):
         status = request.json.get('status', None)
         current_user = get_jwt_identity()
 
-        book = [book for book in store
-                     if shelf_id == book.id and current_user==book.email]
+        book = Shelf.query.filter_by(id=shelf_id).first()
         if not book:
-            return jsonify({"message": "The action is Forbidden"}), 403
+            return jsonify({"message": f'The book with id {shelf_id} is not available'}), 400
         
-        index = store.index(book[0])
-        store[index].status = status
-
-        response = {'message': 'Book status updated successfully', 'book details': store[index].serialize()}
-        return jsonify(response), 200
+        if book.id != current_user:
+            return jsonify({"message": 'You are forbidden from editing this entry'}), 403
+        
+        try:
+            book.update(status)
+            response = {'message': 'Book status updated successfully', 
+                        'book details': book.serialize()}
+            return jsonify(response), 200
+        except Exception as e:
+            return jsonify({'message': str(e)}), 401
         
 
 shelf_view = ShelfManipulation.as_view('books')
