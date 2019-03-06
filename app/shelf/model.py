@@ -15,10 +15,12 @@ class BookShelf():
         self.status = status
     
     def serialize(self):
-        return {'Title': self.title,
-                'Genre':  self.genre,
-                'Status': self.status
-                }
+        return {
+            'book_id': self.id,
+            'title': self.title,
+            'genre':  self.genre,
+            'status': self.status
+        }
 
     def __repr__(self):
         return 'Book is {}'.format(self.title)
