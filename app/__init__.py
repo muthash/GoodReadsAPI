@@ -2,9 +2,12 @@
     returns it after it's loaded up with configuration settingsusing app.config
 """
 from flask import Flask, jsonify
+from flask_jwt_extended import JWTManager
 
 
 from instance.config import app_config
+
+jwt = JWTManager()
 
 def create_app(config_name):
     """Function wraps the creation of a new Flask object, and returns it after it's
@@ -12,6 +15,7 @@ def create_app(config_name):
     """
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(app_config[config_name])
+    jwt.init_app(app)
 
     from app.auth.views import auth
 
@@ -25,6 +29,13 @@ def create_app(config_name):
         else:
             return jsonify({"errors": messages}), err.code
 
+    @jwt.user_claims_loader
+    def add_claims_to_access_token(user):
+        return {'roles': user.role}
+
+    @jwt.user_identity_loader
+    def user_identity_lookup(user):
+        return user.email
 
     app.register_blueprint(auth)
 
