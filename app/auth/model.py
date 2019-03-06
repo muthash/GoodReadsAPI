@@ -12,7 +12,6 @@ class User():
 
     def update_password(self, password):
         self.password = Bcrypt().generate_password_hash(password).decode()
-        # pw_hash = bcrypt.generate_password_hash(‘hunter2’).decode(‘utf-8’)
     
     def serialize(self):
         return {'email': self.email,
