@@ -26,15 +26,20 @@ class AuthTestCase(unittest.TestCase):
         }
         self.header = {'Content-Type': 'application/json'}
 
-    def test_main_page(self):
-        self.assertEqual(self.app.debug, True)
-
     def test_registration(self):
         """Test user registration works correcty."""
         res = self.client.post('/auth/register', headers=self.header, data=json.dumps(self.user_data))
         result = json.loads(res.data.decode())
         self.assertEqual(result['message'], "Account created successfully")
         self.assertEqual(res.status_code, 201)
+
+    def test_login(self):
+        """Test user registration works correcty."""
+        self.client.post('/auth/register', headers=self.header, data=json.dumps(self.login_data))
+        res = self.client.post('/auth/login', headers=self.header, data=json.dumps(self.login_data))
+        result = json.loads(res.data.decode())
+        self.assertEqual(result['message'], "Login successfull")
+        self.assertEqual(res.status_code, 200)
 
 if __name__ == "__main__":
     unittest.main()
