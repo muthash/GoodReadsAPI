@@ -5,7 +5,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token
 
 
-from app.auth.model import User, users
+from app.models import User
 from app.utils import user_args, normalize_email, check_username
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
@@ -24,15 +24,17 @@ class RegisterUser(MethodView):
         if check_username(username):
             return check_username(username)
 
-        emails = [user.email for user in users]
-        if email in emails:
+        user = User.query.filter_by(email=email).first()
+        if user:
             response = {'message': 'User already exists, Please login'}
             return jsonify(response), 409
         
-        user = User(email, username, password)
-        users.append(user)
-        return jsonify({'message': 'Account created successfully'}), 201
-
+        try:
+            user = User(email=email, username=username, password=password)
+            user.save()
+            return jsonify({'message': 'Account created successfully'}), 201
+        except Exception as e:
+            return jsonify({'message': str(e)}), 401
 
 class LoginUser(MethodView):
     """Method to login a user"""
@@ -48,20 +50,21 @@ class LoginUser(MethodView):
             return jsonify({"message": "Missing email or password"}), 400
         
         email = normalize_email(email_input)
-        user_data = [user for user in users
-                 if user.email == email and
-                 Bcrypt().check_password_hash(user.password, password)]
-        
-        if not user_data:
-            response = {'message': 'Invalid email or password'}
-            return jsonify(response), 401
-        
-        user = user_data[0]
-        response = {
-            'message': 'Login successfull',
-            'access_token': create_access_token(identity=user)
-        }
-        return jsonify(response), 200
+        try:
+            user = User.query.filter_by(email=email).first()
+            if user and user.password_is_valid(password):
+                response = {
+                    'message': 'Login successfull',
+                    'access_token': create_access_token(identity=user.id)
+                }
+                return jsonify(response), 200
+            else:
+                response = {
+                    'message': 'Invalid email or password, Please try again'
+                }
+                return jsonify(response), 401
+        except Exception as e:
+            return jsonify({'message': str(e)}), 401
 
 
 auth.add_url_rule('/register', view_func=RegisterUser.as_view('register'))
