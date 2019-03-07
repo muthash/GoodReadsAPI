@@ -52,6 +52,7 @@ class LoginUser(MethodView):
         email = normalize_email(email_input)
         try:
             user = User.query.filter_by(email=email).first()
+            print(user.email)
             if user and user.password_is_valid(password):
                 response = {
                     'message': 'Login successfull',

@@ -44,7 +44,7 @@ pip install -r requirements.txt
 
 ### Env
 
-Create a .env file in your Weconnect-api  root directory and add
+Create a .env file in your root directory and add
 ```
 source venv/bin/activate
 export FLASK_APP="run.py"
@@ -67,11 +67,11 @@ Create two Databases in PostgreSQL:
 
 Run the following commands for each database:
 ```
-python manager.py db init
+python manage.py db init
 
-python manager.py db migrate
+python manage.py db migrate
 
-python manager.py db upgrade
+python manage.py db upgrade
 
 ```
 
